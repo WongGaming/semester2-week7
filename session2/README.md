@@ -8,4 +8,8 @@
 
 `task4`: Debugging via the VS Code UI
 
+`task5`: Static analysis using GCC's `-fanalyzer` option.
+
+`task6`: Dynamic analysis of C programs.
+
 `advanced`: Ideas for more advanced things you can try.
