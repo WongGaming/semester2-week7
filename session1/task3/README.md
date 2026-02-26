@@ -6,8 +6,8 @@
    storage containing the specified values. The function `sum_values()` sums
    these values, returning the result as a long integer.
 
-   Notice how this code uses assertions and the conditional compilation
-   feature discussed on the slides.
+   Notice how this code uses assertions and the conditional logging macros
+   discussed on the slides.
 
 2. Examine `Makefile`. This is a **makefile** to handle compilation of
    `task3.c`. You do not need to understand exactly how this works just yet,
@@ -17,7 +17,7 @@
    options for the compiler. You'll be modifying this later.
 
    Using this makefile, you can compile the program from the terminal by
-   entering `make task3` or simply `make` on its own. You can remove
+   entering `make task3`, or simply `make` on its own. You can remove
    the executable by entering `make clean`.
 
 ## Assertions
@@ -41,15 +41,17 @@
    failed and where it occurs in the source code.
 
    In this case, the assertion `data != NULL` failed; in other words, `data`
-   must have the value `NULL`. This happened on line 23, just inside the
+   must have the value `NULL`. This happened on line 33, just inside the
    `sum_values()` function.
 
-3. Now comment out line 41, so that `num_values` is not given the correct
-   value. Recompile by entering `make`, then run the program with a few
-   integers as command line arguments. This time, the other assertion in
-   `sum_values()` should fail.
+3. Now comment out line 53, so that `num_values` is not given the correct
+   value. (Remember, you can do this by putting `//` at the start of the line.)
 
-   **Uncomment line 41 before proceeding further!**
+   Recompile by entering `make`, then run the program with a few integers as
+   command line arguments. This time, the other assertion in `sum_values()`
+   should fail.
+
+   **Uncomment line 53 before proceeding further!**
 
 4. Check the size of the executable by entering this command in the terminal
    window:
@@ -68,28 +70,86 @@
 5. Run the program, without command line arguments. You should no longer
    see a failed assertion.
 
-6. Comment out line 41 again, then recompile the program, and run it with
+6. Comment out line 53 again, then recompile the program, and run it with
    some numbers as command line arguments. You won't see a failed assertion
    here, either (and the result of the calculation will be wrong!)
 
-   Once again, uncomment line 41 before proceeding further.
+   Once again, uncomment line 53 before proceeding further.
 
-## Conditional Debugging Statements
+## Conditional Logging
 
-1. You will have noticed in the previous experiments that some of the calls
-   made to `printf()` in `task3.c` are not executed. This is because they
-   have not yet been compiled into the executable, `task3`.
+1. `task3.c` uses the logging macros `LOG_MSG()` and `LOG_FMT()` described
+   on the slides. These are included from header file `logging.h`. Open
+   this file and compare it with the code shown on the slides.
 
-   To enable them, edit `Makefile` and change the definition of `CFLAGS` to
+   Notice that there is some extra code in the file:
+
+   ```c
+   #ifndef _LOGGING_H_
+   #define _LOGGING_H_
+   ...
+   #endif  // _LOGGING_H_
+   ```
+
+   This is known as an **include guard**. The preprocessor directive `#ifndef`
+   means "if not defined". This code can be read as
+
+   > "If the symbol `_LOGGING_H_` is not already defined, define it and
+   > then process everything up to the matching `#endif` directive; if the
+   > symbol *is* already defined, ignore the following stuff, because you've
+   > already seen it."
+
+   An include guard like this prevents the contents of the header file from
+   being processed twice, should the file end up being included multiple times.
+
+   Note: the include guard is not strictly needed here, because the header
+   file contains only preprocessor macros, and the preprocessor allows you to
+   redefine these without errors. You will encounter situations where include
+   guards are absolutely necessary in later sessions.
+
+2. You will have already seen that `LOG_MSG()` and `LOG_FMT()` don't generate
+   any output as yet. This is because they have been defined in `task3.c` as
+   empty, 'do nothing' macros.
+
+   To change this, edit `Makefile` and alter the definition of `CFLAGS` to
 
        CFLAGS = -DVERBOSE -Wall -Wextra -Werror
 
    This will ensure that the `VERBOSE` preprocessor symbol is defined when
-   the program is next compiled.
+   the program is next compiled. With this symbol defined, `LOG_MSG()`
+   and `LOG_FMT()` will be defined as calls to the `fprintf()` function.
 
-2. Enter `make clean` to remove the previous version of the executable,
+3. Enter `make clean` to remove the previous version of the executable,
    followed by `make` to recreate it.
 
-3. Run the application in the same ways that you did previously. You should
-   see that the previously-missing print statements are now executed.
+4. Run the application in the same ways that you did previously. You should
+   now see detailed logging messages appear in the terminal.
 
+5. You may have been wondering why these macros use `fprintf()` and the
+   standard error channel `stderr`, instead of using `printf()`. The reason
+   is flexibility. By default `stderr` and `stdout` are both connected to
+   the terminal, but this doesn't have to be the case. We can redirect these
+   channels independently, so that their output goes to files, or is piped
+   into another tool, or is even discarded silently.
+
+   For example, try this:
+
+       ./task3 15 30 45 2> log.txt
+
+   The `2>` redirects `stderr` to the file with the following name. As a
+   result, the logging messages end up in `log.txt` instead of the terminal.
+
+   If you want to discard the logging entirely, you can do
+
+       ./task3 15 30 45 2> /dev/null
+
+   If you want to redirect standard output but not the logging, use `>`
+   instead of `2>`.
+
+   If you want to redirect standard output *and* logging to the same file,
+   do this:
+
+       ./task3 15 30 45 > output.txt 2>&1
+
+6. Try adding more logging to `task3.c`, or changing the existing invocations
+   of `LOG_MSG()` and `LOG_FMT()`.
